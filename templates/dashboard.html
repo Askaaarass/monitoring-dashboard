@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="ru" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мониторинг Аквапоники — Full Stack</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+    {% csrf_token %}
+    
+    <!-- Навбар -->
+    <nav class="bg-white dark:bg-slate-800 shadow-md p-4 mb-6">
+        <div class="container mx-auto flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">🌱</span>
+                <div>
+                    <h1 class="text-xl font-bold">Аквапоника Мониторинг</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">
+                        {% if request.user.is_authenticated %}
+                            Пользователь: <span class="font-bold text-blue-500">{{ request.user.username }}</span>
+                            ({{ request.user.get_role_display }})
+                        {% else %}
+                            Гостевой просмотр · только наблюдение
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <span id="ws-status" class="text-xs px-2.5 py-1 rounded-full font-semibold bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300">
+                    ● Подключение...
+                </span>
+                
+                {% if request.user.is_authenticated %}
+                {% if request.user.is_staff or request.user.role == 'ADMIN' %}
+                <a href="/admin/" target="_blank" class="bg-purple-600 hover:bg-purple-700 text-white text-sm px-3 py-2 rounded-lg font-medium transition flex items-center gap-1">
+                    ⚙️ Админка
+                </a>
+                {% endif %}
+                {% endif %}
+
+                {% if request.user.is_authenticated %}
+                <a href="{% url 'test_control' %}" target="_blank" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-3 py-2 rounded-lg font-medium transition flex items-center gap-1">
+                    🎛️ Пульт тестов
+                </a>
+
+                <a href="{% url 'export_csv' %}" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm px-3 py-2 rounded-lg font-medium transition flex items-center gap-1">
+                    📥 CSV Отчет
+                </a>
+                {% endif %}
+
+                <div class="flex items-center gap-1 rounded-lg bg-slate-200 p-1 dark:bg-slate-700" role="group" aria-label="Выбор темы">
+                    <button type="button" data-theme-option="light" aria-pressed="false" class="rounded-md px-2.5 py-1.5 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500">
+                        Светлая
+                    </button>
+                    <button type="button" data-theme-option="dark" aria-pressed="false" class="rounded-md px-2.5 py-1.5 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500">
+                        Тёмная
+                    </button>
+                </div>
+
+                {% if request.user.is_authenticated %}
+                <form action="{% url 'logout' %}" method="post" class="inline">
+                    {% csrf_token %}
+                    <button type="submit" class="bg-red-500 hover:bg-red-600 text-white text-sm px-3 py-2 rounded-lg font-medium transition">
+                        Выход
+                    </button>
+                </form>
+                {% else %}
+                <a href="{% url 'login' %}" class="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700">
+                    Войти
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 space-y-6 pb-12">
+        <div id="alertsContainer" class="space-y-2"></div>
+
+        <!-- Карточки Датчиков -->
+        <section aria-labelledby="sensor-readings-heading">
+            <h2 id="sensor-readings-heading" class="text-lg font-semibold mb-3 flex items-center gap-2">
+                📊 Показания датчиков в реальном времени
+            </h2>
+            <div id="sensorGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                {% for sensor in sensors %}
+                <div id="sensor-card-{{ sensor.id }}" class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-md border-2 border-transparent transition-all">
+                    <div class="flex justify-between items-start">
+                        <span class="text-xs font-medium text-slate-500 dark:text-slate-400">{{ sensor.name }}</span>
+                        <span id="sensor-alert-{{ sensor.id }}" class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+                            ОЖИДАНИЕ
+                        </span>
+                    </div>
+                    <div class="mt-2 flex items-baseline gap-1">
+                        <span id="sensor-val-{{ sensor.id }}" class="text-2xl font-extrabold">--</span>
+                        <span class="text-xs text-slate-500">{{ sensor.unit }}</span>
+                    </div>
+                    <p id="sensor-norm-{{ sensor.id }}" class="text-[11px] text-slate-400 mt-2">
+                        Норма: {{ sensor.min_threshold }} — {{ sensor.max_threshold }} {{ sensor.unit }}
+                    </p>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Индекс биомассы -->
+        <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-md dark:border-slate-700 dark:bg-slate-800" aria-labelledby="biomass-heading">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <h2 id="biomass-heading" class="text-lg font-semibold">🌿 Индекс биомассы</h2>
+                <span id="biomass-status" class="rounded-full px-3 py-1 text-sm font-semibold"></span>
+            </div>
+            <p class="mt-4 text-2xl font-bold"><span id="biomass-value">{{ biomass_index }}</span>%</p>
+            <div class="mt-3 h-3 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700" role="progressbar" aria-label="Индекс биомассы" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ biomass_index }}" id="biomass-progress">
+                <div id="biomass-bar" class="h-full rounded-full transition-all duration-300"></div>
+            </div>
+            <div class="mt-5 flex flex-wrap items-center justify-between gap-3">
+                <p class="text-sm text-slate-500 dark:text-slate-400">В галерее — демонстрационные фотографии, не снимки с камеры.</p>
+                <button type="button" id="openPhotoGallery" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold transition hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 dark:border-slate-600 dark:hover:bg-slate-700">
+                    Открыть фотогалерею · 6 фото
+                </button>
+            </div>
+
+            <dialog id="photoGalleryDialog" aria-labelledby="photo-gallery-title" class="m-auto max-h-[92vh] w-[min(96vw,1200px)] overflow-y-auto rounded-2xl bg-slate-100 p-0 text-slate-800 shadow-2xl backdrop:bg-slate-950/80 dark:bg-slate-900 dark:text-slate-100">
+                <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-200 bg-slate-100/95 p-5 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95">
+                    <div>
+                        <h3 id="photo-gallery-title" class="text-xl font-bold">Фотогалерея растений</h3>
+                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Последние 6 демонстрационных фото · условное время съёмки 09:00 и 21:00</p>
+                    </div>
+                    <button type="button" id="closePhotoGallery" aria-label="Закрыть фотогалерею" class="rounded-lg px-3 py-1 text-2xl leading-none text-slate-500 transition hover:bg-slate-200 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 dark:hover:bg-slate-700 dark:hover:text-white">
+                        &times;
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
+                    {% for photo in gallery_photos %}
+                    <article class="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800">
+                        <div class="relative aspect-[16/10] bg-emerald-950">
+                            <img src="{% static photo.image %}" alt="Демонстрационная фотография растения" class="h-full w-full object-cover" loading="lazy">
+                            <span class="absolute right-3 top-3 rounded-full bg-slate-950/80 px-2.5 py-1 text-xs font-medium text-white">{{ photo.period }} {{ photo.captured_at|date:"H:i" }}</span>
+                            <span class="absolute bottom-3 left-3 rounded-full bg-slate-950/80 px-2.5 py-1 text-xs font-medium text-emerald-300">Демо-фото</span>
+                        </div>
+                        <div class="p-4">
+                            <p class="font-semibold">{{ photo.captured_at|date:"d.m.Y" }} · {{ photo.captured_at|date:"H:i" }}</p>
+                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Пример фотографии растений. Камера не подключена.</p>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+                <p class="px-5 pb-5 text-xs text-slate-500 dark:text-slate-400">Демонстрационные фотографии: Unsplash.</p>
+            </dialog>
+        </section>
+
+        <!-- Управление реле -->
+        <div>
+            <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                {% if request.user.is_authenticated %}⚡ Управление исполнительными устройствами{% else %}⚡ Состояние устройств{% endif %}
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {% for device in devices %}
+                <div class="bg-white dark:bg-slate-800 p-5 rounded-xl shadow-md flex justify-between items-center">
+                    <div>
+                        <h3 class="font-semibold text-sm">{{ device.name }}</h3>
+                        <p id="device-status-text-{{ device.id }}" class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            Статус: 
+                            <span class="font-bold {% if device.is_active %}text-green-500{% else %}text-slate-400{% endif %}">
+                                {% if device.is_active %}ВКЛЮЧЕНО{% else %}ВЫКЛЮЧЕНО{% endif %}
+                            </span>
+                        </p>
+                    </div>
+                    {% if request.user.is_authenticated %}
+                    <button onclick="toggleDevice('{{ device.id }}')" id="device-btn-{{ device.id }}" class="px-4 py-2 rounded-lg font-bold text-white transition text-xs {% if device.is_active %}bg-green-600 hover:bg-green-700{% else %}bg-slate-500 hover:bg-slate-600{% endif %}">
+                        {% if device.is_active %}ВЫКЛ{% else %}ВКЛ{% endif %}
+                    </button>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Индивидуальные графики -->
+        <div>
+            <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+                📈 Индивидуальные графики показателей (Chart.js)
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for sensor in sensors %}
+                <div id="chart-card-{{ sensor.id }}" class="bg-white dark:bg-slate-800 p-5 rounded-xl shadow-md border-2 border-transparent transition-all">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-sm text-slate-700 dark:text-slate-200">
+                            {{ sensor.name }} (<span class="text-blue-500">{{ sensor.unit }}</span>)
+                        </h3>
+                        <span id="chart-status-{{ sensor.id }}" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-400">
+                            LIVE
+                        </span>
+                    </div>
+                    <div class="h-48">
+                        <canvas id="chart-canvas-{{ sensor.id }}"></canvas>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. Тёмная/Светлая тема ---
+        const themeButtons = document.querySelectorAll('[data-theme-option]');
+        const savedTheme = localStorage.getItem('theme');
+        const initialTheme = savedTheme === 'light' ? 'light' : 'dark';
+
+        function setTheme(theme) {
+            document.documentElement.classList.toggle('dark', theme === 'dark');
+            localStorage.setItem('theme', theme);
+
+            themeButtons.forEach(button => {
+                const isSelected = button.dataset.themeOption === theme;
+                button.setAttribute('aria-pressed', String(isSelected));
+                button.className = isSelected
+                    ? 'rounded-md bg-white px-2.5 py-1.5 text-sm font-medium text-slate-800 shadow-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 dark:bg-slate-900 dark:text-white'
+                    : 'rounded-md px-2.5 py-1.5 text-sm font-medium text-slate-600 transition hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 dark:text-slate-300 dark:hover:text-white';
+            });
+        }
+
+        setTheme(initialTheme);
+        themeButtons.forEach(button => {
+            button.addEventListener('click', () => setTheme(button.dataset.themeOption));
+        });
+
+        function updateBiomassIndex(value) {
+            const index = Math.max(0, Math.min(100, Number(value)));
+            const status = document.getElementById('biomass-status');
+            const bar = document.getElementById('biomass-bar');
+            const progress = document.getElementById('biomass-progress');
+
+            document.getElementById('biomass-value').textContent = index;
+            progress.setAttribute('aria-valuenow', index);
+            bar.style.width = `${index}%`;
+
+            if (index <= 50) {
+                status.textContent = 'Плохо';
+                status.className = 'rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-800 dark:bg-red-900/40 dark:text-red-300';
+                bar.className = 'h-full rounded-full bg-red-500 transition-all duration-300';
+            } else if (index < 80) {
+                status.textContent = 'Средний уровень';
+                status.className = 'rounded-full bg-yellow-100 px-3 py-1 text-sm font-semibold text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300';
+                bar.className = 'h-full rounded-full bg-yellow-500 transition-all duration-300';
+            } else {
+                status.textContent = 'Хорошо';
+                status.className = 'rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-800 dark:bg-green-900/40 dark:text-green-300';
+                bar.className = 'h-full rounded-full bg-green-500 transition-all duration-300';
+            }
+        }
+
+        updateBiomassIndex('{{ biomass_index }}');
+
+        const photoGalleryDialog = document.getElementById('photoGalleryDialog');
+        document.getElementById('openPhotoGallery').addEventListener('click', () => {
+            photoGalleryDialog.showModal();
+        });
+        document.getElementById('closePhotoGallery').addEventListener('click', () => {
+            photoGalleryDialog.close();
+        });
+        photoGalleryDialog.addEventListener('click', event => {
+            if (event.target === photoGalleryDialog) {
+                photoGalleryDialog.close();
+            }
+        });
+
+        // --- 2. CSRF токен ---
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        // --- 3. Инициализация графиков Chart.js ---
+        const sensorCharts = {};
+        const sensorColors = {
+            'water_temp': '#3b82f6',     // Синий
+            'ph': '#10b981',             // Зеленый
+            'air_humidity': '#06b6d4',   // Бирюзовый
+            'water_level': '#8b5cf6',    // Фиолетовый
+            'air_temp': '#f97316'        // Оранжевый
+        };
+
+        {% for sensor in sensors %}
+        (function() {
+            const canvasElem = document.getElementById('chart-canvas-{{ sensor.id }}');
+            if (canvasElem) {
+                const ctx = canvasElem.getContext('2d');
+                const color = sensorColors['{{ sensor.sensor_type }}'] || '#3b82f6';
+                
+                sensorCharts['{{ sensor.id }}'] = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: '{{ sensor.name }}',
+                            data: [],
+                            borderColor: color,
+                            backgroundColor: color + '15',
+                            borderWidth: 2,
+                            pointRadius: 3,
+                            tension: 0.3,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                            y: { beginAtZero: false, ticks: { font: { size: 10 } } }
+                        }
+                    }
+                });
+            }
+        })();
+        {% endfor %}
+
+        // --- 4. WebSockets Клиент ---
+        const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+        const wsUrl = `${wsScheme}://${window.location.host}/ws/sensors/`;
+        const socket = new WebSocket(wsUrl);
+
+        const wsStatusElem = document.getElementById('ws-status');
+
+        socket.onopen = () => {
+            wsStatusElem.innerText = '● WebSockets: Подключено';
+            wsStatusElem.className = 'text-xs px-2.5 py-1 rounded-full font-semibold bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300';
+        };
+
+        socket.onclose = () => {
+            wsStatusElem.innerText = '● WebSockets: Отключено';
+            wsStatusElem.className = 'text-xs px-2.5 py-1 rounded-full font-semibold bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300';
+        };
+
+        socket.onmessage = (event) => {
+            const response = JSON.parse(event.data);
+            
+            if (response.type === 'initial_data' || response.type === 'update_data') {
+                const sensors = response.data.sensors;
+                const devices = response.data.devices;
+                if (response.data.biomass_index !== undefined) {
+                    updateBiomassIndex(response.data.biomass_index);
+                }
+                
+                if (sensors) {
+                    sensors.forEach(sensor => {
+                        const valElem = document.getElementById(`sensor-val-${sensor.id}`);
+                        const alertElem = document.getElementById(`sensor-alert-${sensor.id}`);
+                        const cardElem = document.getElementById(`sensor-card-${sensor.id}`);
+                        const normElem = document.getElementById(`sensor-norm-${sensor.id}`);
+                        const chartCard = document.getElementById(`chart-card-${sensor.id}`);
+                        const chartStatus = document.getElementById(`chart-status-${sensor.id}`);
+
+                        if (normElem) normElem.innerText = `Норма: ${sensor.min_threshold} — ${sensor.max_threshold} ${sensor.unit}`;
+
+                        if (!sensor.is_active) {
+                            if (valElem) valElem.innerText = 'ВЫКЛ';
+                            if (alertElem && cardElem) {
+                                alertElem.innerText = 'ОТКЛЮЧЕН';
+                                alertElem.className = 'text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-300 text-slate-700 dark:bg-slate-700 dark:text-slate-400';
+                                cardElem.className = 'bg-white dark:bg-slate-800 p-4 rounded-xl shadow-md border-2 border-slate-300 dark:border-slate-700 opacity-50 transition-all';
+                            }
+                            if (chartCard) chartCard.className = 'bg-white dark:bg-slate-800 p-5 rounded-xl shadow-md border-2 border-transparent opacity-40 transition-all';
+                            if (chartStatus) {
+                                chartStatus.innerText = 'OFF';
+                                chartStatus.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-300 text-slate-600 dark:bg-slate-700 dark:text-slate-400';
+                            }
+                        } else {
+                            if (valElem) valElem.innerText = sensor.current_value;
+
+                            if (alertElem && cardElem) {
+                                if (sensor.is_alert) {
+                                    alertElem.innerText = sensor.is_auto ? '🤖 АВТО | АЛЕРТ' : '⚙️ РУЧНОЙ | АЛЕРТ';
+                                    alertElem.className = 'text-[10px] px-2 py-0.5 rounded-full font-bold bg-red-200 text-red-800 dark:bg-red-900 dark:text-red-200';
+                                    cardElem.className = 'bg-white dark:bg-slate-800 p-4 rounded-xl shadow-md border-2 border-red-500 bg-red-50 dark:bg-red-950/20 transition-all';
+                                } else {
+                                    alertElem.innerText = sensor.is_auto ? '🤖 АВТО | ОК' : '⚙️ РУЧНОЙ | ОК';
+                                    alertElem.className = 'text-[10px] px-2 py-0.5 rounded-full font-bold bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-200';
+                                    cardElem.className = 'bg-white dark:bg-slate-800 p-4 rounded-xl shadow-md border-2 border-transparent transition-all';
+                                }
+                            }
+
+                            if (chartCard) chartCard.className = 'bg-white dark:bg-slate-800 p-5 rounded-xl shadow-md border-2 border-transparent opacity-100 transition-all';
+                            if (chartStatus) {
+                                chartStatus.innerText = 'LIVE';
+                                chartStatus.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300';
+                            }
+
+                            const chart = sensorCharts[sensor.id];
+                            if (chart && sensor.timestamps && sensor.values) {
+                                chart.data.labels = sensor.timestamps;
+                                chart.data.datasets[0].data = sensor.values;
+                                chart.update('none');
+                            }
+                        }
+                    });
+                }
+
+                if (devices) {
+                    devices.forEach(device => {
+                        const btn = document.getElementById(`device-btn-${device.id}`);
+                        const statusText = document.getElementById(`device-status-text-${device.id}`);
+
+                        if (btn && statusText) {
+                            if (device.is_active) {
+                                btn.innerText = 'ВЫКЛ';
+                                btn.className = 'px-4 py-2 rounded-lg font-bold text-white transition text-xs bg-green-600 hover:bg-green-700';
+                                statusText.innerHTML = 'Статус: <span class="font-bold text-green-500">ВКЛЮЧЕНО</span>';
+                            } else {
+                                btn.innerText = 'ВКЛ';
+                                btn.className = 'px-4 py-2 rounded-lg font-bold text-white transition text-xs bg-slate-500 hover:bg-slate-600';
+                                statusText.innerHTML = 'Статус: <span class="font-bold text-slate-400">ВЫКЛЮЧЕНО</span>';
+                            }
+                        }
+                    });
+                }
+
+                if (response.data.alerts && response.data.alerts.length > 0) {
+                    response.data.alerts.forEach(alert => {
+                        showAlertToast(alert.sensor_name, alert.message);
+                    });
+                }
+            }
+        };
+
+        function showAlertToast(sensorName, message) {
+            const container = document.getElementById('alertsContainer');
+            const toast = document.createElement('div');
+            toast.className = 'bg-red-500 text-white p-3 rounded-lg shadow-lg flex justify-between items-center transition-all animate-bounce';
+            toast.innerHTML = `
+                <div>
+                    <span class="font-bold">⚠️ ВНИМАНИЕ: ${sensorName}</span>
+                    <p class="text-xs">${message}</p>
+                </div>
+                <button onclick="this.parentElement.remove()" class="text-white font-bold px-2">&times;</button>
+            `;
+            container.prepend(toast);
+            setTimeout(() => { if (toast) toast.remove(); }, 6000);
+        }
+
+        async function toggleDevice(deviceId) {
+            try {
+                const response = await fetch(`/api/v1/devices/${deviceId}/toggle/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+            } catch (err) {
+                console.error('Ошибка переключения реле:', err);
+            }
+        }
+    </script>
+</body>
+</html>      

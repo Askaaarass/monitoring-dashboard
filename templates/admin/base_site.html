@@ -1,0 +1,62 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Администрирование аквапоники') }}{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'admin/css/aquaponics_admin.css' %}?v=9">
+{% endblock %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <script>
+        (() => {
+            const key = 'aquaponics-admin-theme';
+            const theme = localStorage.getItem(key) === 'dark' ? 'dark' : 'light';
+            document.documentElement.dataset.theme = theme;
+        })();
+    </script>
+{% endblock %}
+
+{% block branding %}
+<div id="site-name">
+    <a href="{% url 'admin:index' %}">
+        <span class="admin-brand-mark" aria-hidden="true">🌱</span>
+        <span>{{ site_header|default:_('Аквапоника · управление системой') }}</span>
+    </a>
+</div>
+{% endblock %}
+
+{% block nav-global %}
+<div class="admin-header-actions">
+    <button type="button" class="admin-theme-toggle" id="admin-theme-toggle" aria-label="Переключить тему" aria-pressed="false">
+        <span aria-hidden="true" id="admin-theme-icon">☾</span>
+        <span id="admin-theme-label">Тёмная тема</span>
+    </button>
+    <a class="admin-back-link" href="{% url 'dashboard' %}">К мониторингу</a>
+</div>
+<script>
+    (() => {
+        const key = 'aquaponics-admin-theme';
+        const button = document.getElementById('admin-theme-toggle');
+        const icon = document.getElementById('admin-theme-icon');
+        const label = document.getElementById('admin-theme-label');
+
+        function updateThemeControl() {
+            const isDark = document.documentElement.dataset.theme === 'dark';
+            button.setAttribute('aria-pressed', String(isDark));
+            icon.textContent = isDark ? '☀' : '☾';
+            label.textContent = isDark ? 'Светлая тема' : 'Тёмная тема';
+        }
+
+        updateThemeControl();
+        button.addEventListener('click', () => {
+            const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+            document.documentElement.dataset.theme = theme;
+            localStorage.setItem(key, theme);
+            updateThemeControl();
+        });
+    })();
+</script>
+{% endblock %}
