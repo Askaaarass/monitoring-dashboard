@@ -18,8 +18,9 @@ class SensorConsumer(AsyncWebsocketConsumer):
             'data': initial_data
         }))
 
-        self.keep_running = True
-        self.loop_task = asyncio.create_task(self.sensor_simulation_loop())
+        self.keep_running = self.scope['user'].is_authenticated
+        if self.keep_running:
+            self.loop_task = asyncio.create_task(self.sensor_simulation_loop())
 
     async def disconnect(self, close_code):
         self.keep_running = False

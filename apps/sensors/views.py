@@ -5,7 +5,10 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
-from apps.authentication.permissions import IsAdminOrReadOnly
+from apps.authentication.permissions import (
+    IsAdminOrEngineerForSensorControls,
+    IsAdminOrReadOnly,
+)
 from .models import BiomassIndex, Sensor, SensorData, Alert, AlertSeverity
 from .serializers import BiomassIndexSerializer, SensorSerializer, SensorDataSerializer, AlertSerializer
 
@@ -36,7 +39,7 @@ class BiomassIndexView(APIView):
 class SensorViewSet(viewsets.ModelViewSet):
     queryset = Sensor.objects.all()
     serializer_class = SensorSerializer
-    permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [IsAdminOrEngineerForSensorControls]
 
     @action(detail=True, methods=['post'])
     def toggle_auto(self, request, pk=None):

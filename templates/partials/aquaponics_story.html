@@ -1,0 +1,70 @@
+{% load static %}
+<section class="aqua-story" data-aqua-story aria-labelledby="aqua-story-title">
+    <header class="aqua-story__intro">
+        <p class="aqua-story__label">Мини-аквапонный комплекс · как он работает</p>
+        <h2 id="aqua-story-title">От ESP32 до комплекса</h2>
+        <p>Прокрутите страницу, чтобы увидеть, как датчики, водный контур и камера складываются в один стенд.</p>
+    </header>
+    <div class="aqua-story__sequence">
+        <figure class="aqua-story__figure">
+            <svg viewBox="0 0 480 400" fill="none" focusable="false" aria-hidden="true">
+                <circle class="aqua-story__orbit" cx="240" cy="200" r="175"/>
+                <circle class="aqua-story__progress" data-aqua-progress cx="240" cy="200" r="175"
+                        pathLength="100" transform="rotate(-90 240 200)"/>
+                <path class="aqua-story__route" d="M161 115h159q22 0 22 22v127q0 22-22 22H160q-22 0-22-22V137q0-22 22-22z"/>
+                <g class="aqua-story__node" data-aqua-node>
+                    <rect x="99" y="77" width="80" height="76" rx="15"/>
+                    <rect x="123" y="99" width="32" height="32" rx="5"/>
+                    <path d="M131 91v8m16-8v8m-16 32v8m16-8v8m-32-32h8m-8 16h8m32-16h8m-8 16h8"/>
+                    <text x="139" y="176">ESP32</text>
+                </g>
+                <g class="aqua-story__node" data-aqua-node>
+                    <rect x="301" y="77" width="80" height="76" rx="15"/>
+                    <path d="M341 94c-5 8-14 18-14 25a14 14 0 0 0 28 0c0-7-9-17-14-25z"/>
+                    <path d="M335 120q0 6 6 7"/>
+                    <text x="341" y="176">ВОДА</text>
+                </g>
+                <g class="aqua-story__node" data-aqua-node>
+                    <rect x="301" y="248" width="80" height="76" rx="15"/>
+                    <path d="M318 295h46l-5 10h-36l-5-10zm23 0v-22m0 11q-18 0-18-16 15 0 18 16zm0 2q18 0 18-20-16 2-18 20z"/>
+                    <text x="341" y="347">РАСТЕНИЯ</text>
+                </g>
+                <g class="aqua-story__node" data-aqua-node>
+                    <rect x="99" y="248" width="80" height="76" rx="15"/>
+                    <rect x="115" y="280" width="48" height="26" rx="4"/>
+                    <path d="M115 292q8-5 16 0t16 0 16 0m-45-20h42m-34 0v-7m26 7v-7m-22 0h18"/>
+                    <text x="139" y="347">СТЕНД</text>
+                </g>
+                <text class="aqua-story__core" x="240" y="203" data-aqua-count>01–04</text>
+                <text class="aqua-story__legend" x="240" y="225">КОНТУР СИСТЕМЫ</text>
+            </svg>
+            <div class="aqua-story__target" data-aqua-target>
+                <img src="{% static 'sensors/target-complex.webp' %}" width="1280" height="1169"
+                     alt="Целевой стенд с аквариумом, лотком микрозелени, камерой над растениями и панелью управления сбоку.">
+                <p>Целевой вид комплекса · иллюстрация из презентации</p>
+            </div>
+        </figure>
+        <ol class="aqua-story__steps">
+            <li data-aqua-step>
+                <p class="aqua-story__label">01 · Сбор данных</p>
+                <h3>ESP32 и датчики</h3>
+                <p>ESP32 будет собирать показания датчиков воды, включая температуру, pH и мутность, и передавать их на панель мониторинга.</p>
+            </li>
+            <li data-aqua-step>
+                <p class="aqua-story__label">02 · Циркуляция</p>
+                <h3>Аквариум и водный контур</h3>
+                <p>Помпа подаёт воду к лотку с микрозеленью. Вода возвращается в аквариум по замкнутому контуру.</p>
+            </li>
+            <li data-aqua-step>
+                <p class="aqua-story__label">03 · Наблюдение</p>
+                <h3>Микрозелень и камера</h3>
+                <p>Камера будет снимать микрозелень, чтобы компьютерное зрение могло оценивать её рост по снимкам.</p>
+            </li>
+            <li data-aqua-step>
+                <p class="aqua-story__label">04 · Целевой комплекс</p>
+                <h3>Всё в одном стенде</h3>
+                <p>Аквариум, микрозелень, камера и блок управления работают вместе. На панели можно будет отслеживать состояние комплекса и видеть оповещения об отклонениях.</p>
+            </li>
+        </ol>
+    </div>
+</section>

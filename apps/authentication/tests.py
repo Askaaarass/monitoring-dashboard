@@ -1,10 +1,39 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from .forms import CustomUserCreationForm
+
+
+class RegistrationSecurityTests(TestCase):
+    def test_public_registration_cannot_assign_admin_role(self):
+        response = self.client.post('/auth/register/', {
+            'username': 'registration-role-test',
+            'password1': 'Safe-password-8492!',
+            'password2': 'Safe-password-8492!',
+            'role': 'ADMIN',
+        })
+
+        self.assertRedirects(response, '/dashboard/')
+        user = get_user_model().objects.get(username='registration-role-test')
+        self.assertEqual(user.role, 'ENGINEER')
+        self.assertNotIn('role', CustomUserCreationForm().fields)
+
+
+class PublicProjectTests(TestCase):
+    def test_project_page_links_to_monitoring_and_engineer_login(self):
+        with self.assertNumQueries(0):
+            response = self.client.get('/')
+
+        self.assertContains(response, 'Автономный мини-аквапонный комплекс')
+        self.assertContains(response, 'data-aqua-story')
+        self.assertContains(response, 'target-complex.webp')
+        self.assertContains(response, 'href="/dashboard/"')
+        self.assertContains(response, 'href="/auth/login/"')
+        self.assertNotContains(response, 'new WebSocket')
 
 
 class GuestDashboardTests(TestCase):
     def test_anonymous_user_can_open_read_only_dashboard(self):
-        response = self.client.get('/')
+        response = self.client.get('/dashboard/')
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['gallery_photos']), 6)
@@ -14,12 +43,24 @@ class GuestDashboardTests(TestCase):
         self.assertLess(page.index('Показания датчиков в реальном времени'), page.index('Индекс биомассы'))
         self.assertLess(page.index('Индекс биомассы'), page.index('Состояние устройств'))
         self.assertContains(response, 'Гостевой просмотр')
+        self.assertNotContains(response, 'data-aqua-story')
         self.assertContains(response, 'Открыть фотогалерею')
         self.assertContains(response, 'Демо-фото')
         self.assertContains(response, 'Войти')
         self.assertNotContains(response, 'Пульт тестов')
         self.assertNotContains(response, 'CSV Отчет')
         self.assertNotContains(response, 'onclick="toggleDevice')
+
+    def test_engineer_login_redirects_to_dashboard_with_test_control_link(self):
+        get_user_model().objects.create_user(username='story-engineer', password='test-password')
+
+        response = self.client.post(
+            '/auth/login/', {'username': 'story-engineer', 'password': 'test-password'}, follow=True
+        )
+
+        self.assertRedirects(response, '/dashboard/')
+        self.assertContains(response, 'Пульт тестов')
+        self.assertContains(response, 'href="/test-control/"')
 
     def test_login_page_offers_guest_dashboard(self):
         response = self.client.get('/auth/login/')

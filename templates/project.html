@@ -1,0 +1,54 @@
+<!doctype html>
+{% load static %}
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Дипломный проект IITU об автономном мини-аквапонном комплексе с ESP32, датчиками и компьютерным зрением.">
+    <title>Мини-аквапонный комплекс · Дипломный проект IITU</title>
+    <link rel="stylesheet" href="{% static 'sensors/aquaponics-story.css' %}">
+    <script defer src="{% static 'sensors/aquaponics-story.js' %}"></script>
+</head>
+<body class="aqua-project">
+    <header class="aqua-project__header">
+        <a class="aqua-project__brand" href="{% url 'project' %}">IITU <span>· Дипломный проект</span></a>
+        <nav aria-label="Разделы проекта">
+            <a href="#about">Об аквапонике</a>
+            <a href="#team">Команда</a>
+        </nav>
+    </header>
+
+    <main class="aqua-project__main">
+        <section class="aqua-project__hero" aria-labelledby="project-title">
+            <p class="aqua-story__label">Информационные системы · IITU · 2026</p>
+            <h1 id="project-title">Автономный мини-аквапонный комплекс</h1>
+            <p class="aqua-project__subtitle">Разработка интеллектуальной системы мониторинга и управления мини-аквапонным комплексом на основе технологий IoT и машинного обучения</p>
+            <div class="aqua-project__actions">
+                <a class="aqua-project__button aqua-project__button--primary" href="{% url 'dashboard' %}">Смотреть показатели</a>
+                <a class="aqua-project__button" href="{% url 'login' %}">Вход для инженера</a>
+            </div>
+        </section>
+
+        <section class="aqua-project__about" id="about" aria-labelledby="about-title">
+            <h2 id="about-title">Как работает аквапоника</h2>
+            <p>Рыбу и растения выращивают в одном водном контуре. Бактерии превращают отходы рыб в питательные вещества для растений. Помпа подаёт воду к корням микрозелени, а затем вода возвращается в аквариум.</p>
+            <h2>Что хотим сделать</h2>
+            <p>Цель проекта — создать автономный мини-аквапонный комплекс, который стабильно работает при меньшем объёме ручного контроля. Планируем использовать датчики и компьютерное зрение для наблюдения за водой и ростом микрозелени, а правила управления — для реакции на отклонения и защиты оборудования.</p>
+            <p>Сейчас веб-прототип позволяет просматривать показатели и проверять оповещения на тестовых значениях. Следующий этап — подключить оборудование и проверить автономные сценарии на физическом стенде.</p>
+        </section>
+
+        {% include "partials/aquaponics_story.html" %}
+
+        <section class="aqua-project__team" id="team" aria-labelledby="team-title">
+            <p class="aqua-story__label">Участники проекта</p>
+            <h2 id="team-title">Команда</h2>
+            <dl>
+                <div><dt>Alibek Aliaskar</dt><dd>Машинное обучение, логика и интеграция</dd></div>
+                <div><dt>Askar Askerov</dt><dd>Django и компьютерное зрение</dd></div>
+                <div><dt>Danial Bagdatuly</dt><dd>IoT и аппаратная часть</dd></div>
+            </dl>
+            <p>Научный руководитель — Amanova Raikhan Temirbekovna</p>
+        </section>
+    </main>
+</body>
+</html>
