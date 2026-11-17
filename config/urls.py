@@ -26,4 +26,6 @@ urlpatterns = [
     path('auth/', include('apps.authentication.urls')),
     path('api/v1/biomass-index/', BiomassIndexView.as_view(), name='biomass_index'),
     path('api/v1/', include(router.urls)),
+    path('api/assistant/', include('apps.assistant.urls')),
+    path('api/donations/', include('apps.donations.urls')),
 ]

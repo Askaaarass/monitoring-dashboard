@@ -5,3 +5,4 @@ channels_redis
 celery
 redis
 pandas
+google-genai>=1.55,<4

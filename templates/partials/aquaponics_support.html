@@ -1,0 +1,44 @@
+<section class="aqua-support" id="support" aria-labelledby="support-title">
+    <div class="aqua-support__copy">
+        <p class="aqua-project__label">Поддержка проекта</p>
+        <h2 id="support-title">SUPPORT OUR PROJECT</h2>
+        <p class="aqua-support__subtitle">Помогите нам развивать умные и устойчивые аквапонные технологии.</p>
+        <p>Ваш вклад поможет улучшать прототип, приобретать датчики, развивать интеллектуальный мониторинг и продолжать исследования.</p>
+        <p class="aqua-support__notice">
+            Пожертвования добровольны и предназначены для поддержки проекта. Получатель и платёжный оператор пока не подтверждены — приём платежей отключён.
+        </p>
+    </div>
+    <div class="aqua-support__panel">
+        <h3>Выберите сумму</h3>
+        <form data-donation-form>
+            <fieldset class="aqua-support__amounts">
+                <legend class="aqua-support__sr-only">Сумма пожертвования в тенге</legend>
+                <label><input type="radio" name="amount" value="1000" checked><span>1 000 ₸</span></label>
+                <label><input type="radio" name="amount" value="3000"><span>3 000 ₸</span></label>
+                <label><input type="radio" name="amount" value="5000"><span>5 000 ₸</span></label>
+                <label><input type="radio" name="amount" value="10000"><span>10 000 ₸</span></label>
+                <label><input type="radio" name="amount" value="20000"><span>20 000 ₸</span></label>
+                <label class="aqua-support__custom-option">
+                    <input type="radio" name="amount" value="custom">
+                    <span>Своя сумма</span>
+                </label>
+            </fieldset>
+            <label class="aqua-support__custom-field" data-custom-amount hidden>
+                <span>Сумма в KZT</span>
+                <input type="number" min="1" step="1" inputmode="numeric" data-custom-amount-input>
+            </label>
+            <div class="aqua-support__identity">
+                <label>Имя <span>(необязательно)</span><input name="donor_name" maxlength="120" autocomplete="name"></label>
+                <label>Email <span>(необязательно)</span><input name="donor_email" type="email" autocomplete="email"></label>
+            </div>
+            <label class="aqua-support__anonymous"><input type="checkbox" name="is_anonymous"> Не сохранять имя и email</label>
+            <button type="submit" disabled aria-describedby="donation-disabled-note">Платежи временно недоступны</button>
+            <p id="donation-disabled-note" class="aqua-support__disabled-note">Платёжная форма откроется после подтверждения получателя и подключения одобренного оператора.</p>
+            <p class="aqua-support__form-message" data-donation-message role="status" aria-live="polite"></p>
+        </form>
+        <div class="aqua-support__stats" data-donation-stats aria-live="polite">
+            <div><strong data-donation-total>—</strong><span>подтверждено, KZT</span></div>
+            <div><strong data-donation-count>—</strong><span>платежей</span></div>
+        </div>
+    </div>
+</section>

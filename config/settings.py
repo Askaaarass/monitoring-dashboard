@@ -54,6 +54,8 @@ INSTALLED_APPS = [
     'apps.sensors',
     'apps.devices',
     'apps.analytics',
+    'apps.assistant',
+    'apps.donations',
 ]
 
 MIDDLEWARE = [
@@ -170,3 +172,12 @@ CSRF_TRUSTED_ORIGINS = [
     'https://blades-ensuring-authorized-duo.trycloudflare.com',
     'https://*.ngrok-free.app',
 ]
+
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-3.6-flash')
+GEMINI_REQUEST_TIMEOUT_SECONDS = int(os.environ.get('GEMINI_REQUEST_TIMEOUT_SECONDS', '25'))
+GEMINI_REQUESTS_PER_MINUTE = int(os.environ.get('GEMINI_REQUESTS_PER_MINUTE', '10'))
+
+DONATIONS_ENABLED = os.environ.get('DONATIONS_ENABLED', '').strip().lower() in {'1', 'true', 'yes'}
+PAYMENT_PROVIDER_CLASS = os.environ.get('PAYMENT_PROVIDER_CLASS', '')
+PUBLIC_SITE_URL = os.environ.get('PUBLIC_SITE_URL', '').rstrip('/')

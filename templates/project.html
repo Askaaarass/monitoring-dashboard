@@ -8,6 +8,7 @@
     <title>Мини-аквапонный комплекс · Дипломный проект IITU</title>
     <link rel="stylesheet" href="{% static 'sensors/aquaponics-story.css' %}">
     <script defer src="{% static 'sensors/aquaponics-story.js' %}"></script>
+    <script type="module" src="{% static 'sensors/aquaponics-experience.js' %}"></script>
 </head>
 <body class="aqua-project">
     <header class="aqua-project__header">
@@ -20,15 +21,42 @@
 
     <main class="aqua-project__main">
         <section class="aqua-project__hero" aria-labelledby="project-title">
-            <p class="aqua-story__label">Информационные системы · IITU · 2026</p>
-            <h1 id="project-title">Автономный мини-аквапонный комплекс</h1>
-            <p class="aqua-project__subtitle">Разработка интеллектуальной системы мониторинга и управления мини-аквапонным комплексом на основе технологий IoT и машинного обучения</p>
-            <div class="aqua-project__actions">
-                <a class="aqua-project__button aqua-project__button--primary" href="{% url 'dashboard' %}">Смотреть показатели</a>
-                <a class="aqua-project__button" href="{% url 'login' %}">Вход для инженера</a>
+            <div class="aqua-project__hero-layout">
+                <div class="aqua-project__hero-copy">
+                    <p class="aqua-project__label">Информационные системы · IITU · 2026</p>
+                    <h1 id="project-title">Аквапоника под контролем</h1>
+                    <p class="aqua-project__subtitle">Автономный мини-аквапонный комплекс: ESP32 собирает данные о воде и воздухе, а камера наблюдает за ростом растений.</p>
+                    <div class="aqua-project__actions">
+                        <a class="aqua-project__button aqua-project__button--primary" href="{% url 'dashboard' %}">Смотреть показатели</a>
+                        <a class="aqua-project__button" href="{% url 'login' %}">Вход для инженера</a>
+                    </div>
+                </div>
+                <figure class="aqua-project__scene" data-aqua-scene>
+                    <div class="aqua-project__scene-frame">
+                        <img src="{% static 'sensors/target-complex.webp' %}" width="1280" height="1169"
+                             alt="Аквапонный комплекс: аквариум, ESP32-контроллер, датчики и камера над растениями.">
+                        <span class="aqua-project__scene-tag aqua-project__scene-tag--camera">Камера наблюдения</span>
+                        <span class="aqua-project__scene-tag aqua-project__scene-tag--board">ESP32 · сбор данных</span>
+                        <span class="aqua-project__scene-tag aqua-project__scene-tag--water">Датчики воды</span>
+                    </div>
+                    <figcaption>Концептуальная визуализация стенда</figcaption>
+                </figure>
+            </div>
+            <div class="aqua-project__measurements" id="measurements" aria-labelledby="measurements-title">
+                <h2 id="measurements-title">Что отслеживает комплекс</h2>
+                <ul>
+                    <li>Температура воздуха</li>
+                    <li>Влажность воздуха</li>
+                    <li>Температура воды</li>
+                    <li>Уровень воды</li>
+                    <li>Мутность</li>
+                    <li>pH</li>
+                    <li>Камера роста растений</li>
+                </ul>
             </div>
         </section>
 
+        {% include "partials/aquaponics_assembly.html" %}
         <section class="aqua-project__about" id="about" aria-labelledby="about-title">
             <h2 id="about-title">Как работает аквапоника</h2>
             <p>Рыбу и растения выращивают в одном водном контуре. Бактерии превращают отходы рыб в питательные вещества для растений. Помпа подаёт воду к корням микрозелени, а затем вода возвращается в аквариум.</p>
@@ -37,10 +65,11 @@
             <p>Сейчас веб-прототип позволяет просматривать показатели и проверять оповещения на тестовых значениях. Следующий этап — подключить оборудование и проверить автономные сценарии на физическом стенде.</p>
         </section>
 
-        {% include "partials/aquaponics_story.html" %}
+        {% include "partials/aquaponics_experience.html" %}
+        {% include "partials/aquaponics_support.html" %}
 
         <section class="aqua-project__team" id="team" aria-labelledby="team-title">
-            <p class="aqua-story__label">Участники проекта</p>
+            <p class="aqua-project__label">Участники проекта</p>
             <h2 id="team-title">Команда</h2>
             <dl>
                 <div><dt>Alibek Aliaskar</dt><dd>Машинное обучение, логика и интеграция</dd></div>
@@ -50,5 +79,8 @@
             <p>Научный руководитель — Amanova Raikhan Temirbekovna</p>
         </section>
     </main>
+    {% include "partials/aquaponics_assistant.html" %}
+    <script defer src="{% static 'sensors/aquaponics-support.js' %}"></script>
+    <script defer src="{% static 'sensors/aquaponics-assistant.js' %}"></script>
 </body>
 </html>

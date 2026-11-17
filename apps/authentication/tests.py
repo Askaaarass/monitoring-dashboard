@@ -24,7 +24,9 @@ class PublicProjectTests(TestCase):
             response = self.client.get('/')
 
         self.assertContains(response, 'Автономный мини-аквапонный комплекс')
-        self.assertContains(response, 'data-aqua-story')
+        self.assertContains(response, 'data-aqua-assembly')
+        self.assertContains(response, 'data-aqua-lab')
+        self.assertNotContains(response, 'data-aqua-story')
         self.assertContains(response, 'target-complex.webp')
         self.assertContains(response, 'href="/dashboard/"')
         self.assertContains(response, 'href="/auth/login/"')

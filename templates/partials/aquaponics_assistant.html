@@ -1,0 +1,27 @@
+<div class="aqua-assistant" data-assistant>
+    <button class="aqua-assistant__launcher" type="button" aria-expanded="false" aria-controls="aq-assistant-panel" data-assistant-open>
+        <span class="aqua-assistant__avatar" aria-hidden="true">AQ</span>
+        <span>Спросить AQ</span>
+    </button>
+    <section class="aqua-assistant__panel" id="aq-assistant-panel" aria-label="AQ Assistant" data-assistant-panel hidden>
+        <header class="aqua-assistant__header">
+            <span class="aqua-assistant__avatar" aria-hidden="true">AQ</span>
+            <div><strong>AQ Assistant</strong><span data-assistant-status>Подключение…</span></div>
+            <button type="button" aria-label="Очистить диалог" title="Очистить диалог" data-assistant-clear>↺</button>
+            <button type="button" aria-label="Закрыть" data-assistant-close>×</button>
+        </header>
+        <div class="aqua-assistant__messages" data-assistant-messages role="log" aria-live="polite" aria-relevant="additions">
+            <article class="aqua-assistant__message aqua-assistant__message--assistant" data-welcome-message>
+                Здравствуйте! Я AQ Assistant. Расскажу о Smart Aquaponics System, датчиках, ESP32 и технологиях проекта. Чем могу помочь?
+            </article>
+        </div>
+        <div class="aqua-assistant__suggestions" data-assistant-suggestions></div>
+        <form class="aqua-assistant__form" data-assistant-form>
+            {% csrf_token %}
+            <label class="aqua-support__sr-only" for="aq-assistant-input">Ваш вопрос</label>
+            <textarea id="aq-assistant-input" name="message" rows="2" maxlength="2000" placeholder="Напишите вопрос…" required data-assistant-input></textarea>
+            <button type="submit" aria-label="Отправить сообщение" data-assistant-send>↑</button>
+        </form>
+        <p class="aqua-assistant__disclaimer">Ответы основаны на документации проекта. Показания DEMO не являются измерениями.</p>
+    </section>
+</div>
